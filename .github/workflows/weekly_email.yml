@@ -1,0 +1,38 @@
+name: Weekly Analyst Targets Email - Sat 06:30 UK
+
+on:
+  schedule:
+    - cron: '30 5 * * 6'  # 05:30 UTC = 06:30 BST summer. For 06:30 GMT winter use '30 6 * * 6'
+  workflow_dispatch:  # Button to run manually anytime
+
+jobs:
+  scan-and-email:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 pandas lxml
+
+      - name: Run scan
+        run: python analyst_ratings_weekly_email.py
+
+      - name: Send email to carl.benton@hotmail.com
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.office365.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: Analyst Ratings Weekly - Last 7 Days - ${{ github.run_number }}
+          to: carl.benton@hotmail.com
+          from: ${{ secrets.EMAIL_USERNAME }}
+          html_body: file://email_body.html
+          attachments: ./analyst_targets_*.csv
+          convert_markdown: false
+
